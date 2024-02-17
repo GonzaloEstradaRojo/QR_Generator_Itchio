@@ -8,11 +8,13 @@ import time
 #creation of new pdf
 from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle
 from reportlab.lib.units import inch
+from reportlab.lib import colors
 
 ############# VARIABLES #############
 URL = "https://itch.io/jam/malagajam-weekend-17/entries"
 PDFNAME = "Games Qrs"
 QRSIZE = 180
+FONTSIZE = 15
 #####################################
 
 
@@ -49,7 +51,6 @@ def Create_QR_Images(data):
         os.mkdir("Qrs") 
 
     for i in range(len(data)):
-        # img = qrcode.make(data[i][1])
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -67,7 +68,7 @@ def Create_QR_Images(data):
 
 def Create_PDF_With_Table(data):
 
-    doc = SimpleDocTemplate(f"{PDFNAME} - TABLA 11.pdf",
+    doc = SimpleDocTemplate(f"{PDFNAME}.pdf",
                         rightMargin=1,leftMargin=1,
                         topMargin=1,bottomMargin=1)
     elems = []
@@ -79,13 +80,17 @@ def Create_PDF_With_Table(data):
         if index % 2 == 0:
             rows.append([game[0]])
             rows.append([image])
+            tabStyle.append(('FONTSIZE',(0,index),(1,index),FONTSIZE))
+            tabStyle.append(('VALIGN',(0,index),(1,index),"BOTTOM"))
         else:
             rows[-2].append(game[0])
             rows[-1].append(image)
-    table = Table(rows, colWidths=inch*3)
+
+    table = Table(rows, colWidths=inch*4)
     table.setStyle(TableStyle(tabStyle))
     elems.append(table)
     doc.build(elems)
+
 
 if __name__ == "__main__":    
     try:
