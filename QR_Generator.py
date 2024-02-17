@@ -34,6 +34,7 @@ def Get_Itchio_Data(url):
         data = [(elem.get_attribute('innerHTML'),elem.get_attribute('href')) for elem in elems]
         # Close browser window
         driver.quit()
+        data.sort(key=lambda elem: elem[0])
         return data
     except Exception as error:
       print("An error occurred:", error)
