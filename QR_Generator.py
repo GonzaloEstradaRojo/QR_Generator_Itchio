@@ -8,13 +8,15 @@ import time
 #creation of new pdf
 from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle
 from reportlab.lib.units import inch
-from reportlab.lib import colors
+import PIL.Image
 
 ############# VARIABLES #############
 URL = "https://itch.io/jam/malagajam-weekend-17/entries"
 PDFNAME = "Games Qrs"
 QRSIZE = 180
 FONTSIZE = 15
+LOGONAME = "MJW LOGO.png"
+addLogoToQR = True
 #####################################
 
 
@@ -54,13 +56,18 @@ def Create_QR_Images(data):
     for i in range(len(data)):
         qr = qrcode.QRCode(
             version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=10,
             border=2,
         )
         qr.add_data(data[i][1])
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
+        if(addLogoToQR):
+            logo = PIL.Image.open(LOGONAME)
+            logo = logo.resize((100,100))
+            pos = ((img.size[0] - logo.size[0])//2,(img.size[1] - logo.size[1])//2)
+            img.paste(logo, pos)
         refactor_Name = Refactor_Game_Name(data[i][0])
         img.save(f'Qrs\{refactor_Name}.png')
         qrs.append((refactor_Name,img))
