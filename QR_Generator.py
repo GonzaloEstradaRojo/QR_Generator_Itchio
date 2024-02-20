@@ -11,12 +11,12 @@ from reportlab.lib.units import inch
 import PIL.Image
 
 ############# VARIABLES #############
-URL = "https://itch.io/jam/malagajam-weekend-17/entries"
+URL = "https://itch.io/jam/malagajam-weekend-16/entries"
 PDFNAME = "Games Qrs"
 QRSIZE = 180
 FONTSIZE = 15
 LOGONAME = "MJW LOGO.png"
-addLogoToQR = True
+ADDLOGO = True
 #####################################
 
 
@@ -63,7 +63,7 @@ def Create_QR_Images(data):
         qr.add_data(data[i][1])
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
-        if(addLogoToQR):
+        if(ADDLOGO):
             logo = PIL.Image.open(LOGONAME)
             logo = logo.resize((100,100))
             pos = ((img.size[0] - logo.size[0])//2,(img.size[1] - logo.size[1])//2)
@@ -86,12 +86,12 @@ def Create_PDF_With_Table(data):
         print(index, game[0])
         image = Image(f"Qrs/{game[0]}.png",QRSIZE,QRSIZE)
         if index % 2 == 0:
-            rows.append([game[0]])
+            rows.append([Truncate_Large_Names(game[0])])
             rows.append([image])
             tabStyle.append(('FONTSIZE',(0,index),(1,index),FONTSIZE))
             tabStyle.append(('VALIGN',(0,index),(1,index),"BOTTOM"))
         else:
-            rows[-2].append(game[0])
+            rows[-2].append(Truncate_Large_Names(game[0]))
             rows[-1].append(image)
 
     table = Table(rows, colWidths=inch*4)
@@ -99,6 +99,10 @@ def Create_PDF_With_Table(data):
     elems.append(table)
     doc.build(elems)
 
+def Truncate_Large_Names(name: str) -> str:
+    if(len(name) > 28):    
+        return name[:25]+"..."
+    return name
 
 if __name__ == "__main__":    
     try:
