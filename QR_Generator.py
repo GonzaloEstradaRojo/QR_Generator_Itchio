@@ -11,15 +11,6 @@ from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle
 from reportlab.lib.units import inch
 import PIL.Image
 
-############# VARIABLES #############
-URL = "https://itch.io/jam/malagajam-weekend-17/entries"
-PDFNAME = "Games Qrs"
-QRSIZE = 180
-FONTSIZE = 15
-LOGONAME = "MJW LOGO.png"
-ADDLOGO = True
-#####################################
-
 class QRGenerator:
     def __init__(self) -> None:
         self.URL = None
@@ -35,6 +26,7 @@ class QRGenerator:
 
     def Create_PDF(self):
         try:
+            self.Change_Working_Directory()
             games_data = self.Get_Itchio_Data()
             qrs = self.Create_QR_Images(games_data)
             self.Create_PDF_With_Table(qrs)
@@ -62,6 +54,13 @@ class QRGenerator:
 
     def Set_Save_Directory(self, saveDirectory):
         self.SAVEDIRECTORY = saveDirectory
+
+    def Change_Working_Directory(self):
+        os.chdir(self.SAVEDIRECTORY)
+        if not os.path.exists("Games QR"):
+            os.mkdir("Games QR") 
+            os.chdir(os.path.join(self.SAVEDIRECTORY,"Games QR"))
+            print(f'new directory: {os.path.join(self.SAVEDIRECTORY,"Games QR")}')
 
     def Get_Itchio_Data(self):
         # Start Firefox session
@@ -105,8 +104,8 @@ class QRGenerator:
             qr.add_data(data[i][1])
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
-            if(ADDLOGO):
-                logo = PIL.Image.open(LOGONAME)
+            if(self.AddLogo):
+                logo = PIL.Image.open(self.LOGOPATH)
                 logo = logo.resize((100,100))
                 pos = ((img.size[0] - logo.size[0])//2,(img.size[1] - logo.size[1])//2)
                 img.paste(logo, pos)
@@ -117,7 +116,7 @@ class QRGenerator:
 
     def Create_PDF_With_Table(self, data):
 
-        doc = SimpleDocTemplate(f"{PDFNAME}.pdf",
+        doc = SimpleDocTemplate(f"{self.PDFName}.pdf",
                             rightMargin=1,leftMargin=1,
                             topMargin=1,bottomMargin=1)
         elems = []
@@ -125,11 +124,11 @@ class QRGenerator:
         tabStyle = [('ALIGN',(0,0),(-1,-1),'CENTER')] 
         for index, game in enumerate(data):
             print(index, game[0])
-            image = Image(f"Qrs/{game[0]}.png",QRSIZE,QRSIZE)
+            image = Image(f"Qrs/{game[0]}.png",self.QRSIZE,self.QRSIZE)
             if index % 2 == 0:
                 rows.append([self.Truncate_Large_Names(game[0])])
                 rows.append([image])
-                tabStyle.append(('FONTSIZE',(0,index),(1,index),FONTSIZE))
+                tabStyle.append(('FONTSIZE',(0,index),(1,index),self.FONTSIZE))
                 tabStyle.append(('VALIGN',(0,index),(1,index),"BOTTOM"))
             else:
                 rows[-2].append(self.Truncate_Large_Names(game[0]))
@@ -154,9 +153,10 @@ if __name__ == "__main__":
     try:
         generator = QRGenerator()
         generator.Set_Url("https://itch.io/jam/malagajam-weekend-17/entries")
-        generator.Set_Logo_Path("MJW LOGO.png")
+        generator.Set_Logo_Path("G:\My Drive\Sincronizacion\Programacion\Python\QR_Generator_Itchio\MJW LOGO.png")
         generator.Set_Webdriver("Firefox")
         generator.Set_Delete_QR_Folder(False)
+        generator.Set_Save_Directory(os.getcwd())
         generator.Create_PDF()
 
     except Exception as error:
