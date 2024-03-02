@@ -25,7 +25,7 @@ class QRGenerator:
         self.URL = None
         self.LOGOPATH = None
         self.WEBDRIVER = None
-        
+        self.SAVEDIRECTORY = os.getcwd()        
 
         self.PDFName = "Games Qrs"
         self.AddLogo = False
@@ -38,6 +38,8 @@ class QRGenerator:
             games_data = self.Get_Itchio_Data()
             qrs = self.Create_QR_Images(games_data)
             self.Create_PDF_With_Table(qrs)
+            if(self.DeleteQRFolder):
+                self.Delete_QR_Folders()
 
         except Exception as error:
             print("An error occurred:", error) 
@@ -57,6 +59,9 @@ class QRGenerator:
 
     def Set_Delete_QR_Folder(self, deleteFolder):
         self.DeleteQRFolder = deleteFolder
+
+    def Set_Save_Directory(self, saveDirectory):
+        self.SAVEDIRECTORY = saveDirectory
 
     def Get_Itchio_Data(self):
         # Start Firefox session
@@ -140,15 +145,19 @@ class QRGenerator:
             return name[:25]+"..."
         return name
 
-
+    def Delete_QR_Folders(self):
+        folderPath = os.path.join(self.SAVEDIRECTORY, "Qrs")
+        if os.path.isdir(folderPath):
+            shutil.rmtree(folderPath)
+  
 if __name__ == "__main__":    
     try:
         generator = QRGenerator()
         generator.Set_Url("https://itch.io/jam/malagajam-weekend-17/entries")
         generator.Set_Logo_Path("MJW LOGO.png")
         generator.Set_Webdriver("Firefox")
+        generator.Set_Delete_QR_Folder(False)
         generator.Create_PDF()
-        print(generator.URL, generator.LOGOPATH, generator.WEBDRIVER)
 
     except Exception as error:
-      print("An error occurred:", error) 
+      print("An error occurred: ", error) 
