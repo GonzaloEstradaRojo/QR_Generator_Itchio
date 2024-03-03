@@ -50,7 +50,7 @@ def createPDF():
     # generator.Set_Url("https://itch.io/jam/malagajam-weekend-17/entries")
     generator.Set_Url(ent_url.get())
 
-    if(logoWanted):
+    if(logoWanted.get() == 1):
         if(ent_logo.get() == ""):
             messagebox.showwarning(
                 message=f"Logo is missing.\nPlease, select an image before creating th PDF",
