@@ -32,7 +32,6 @@ class QRGenerator:
             self.Create_PDF_With_Table(qrs)
             if(self.DeleteQRFolder):
                 self.Delete_QR_Folders()
-
         except Exception as error:
             print("An error occurred:", error) 
 
@@ -64,12 +63,22 @@ class QRGenerator:
 
     def Get_Itchio_Data(self):
         # Start Firefox session
-        driver = webdriver.Firefox()
+        match self.WEBDRIVER:
+            case "Firefox":
+                driver = webdriver.Firefox()
+                scrollScript = "window.scrollTo(0, window.scrollMaxY)"
+            case "Chrome":
+                driver = webdriver.Chrome()
+                scrollScript = "window.scrollTo(0, document.body.scrollHeight)"
+            case "Microsoft Edge":
+                driver = webdriver.Edge()
+                scrollScript = "window.scrollTo(0, document.body.scrollHeight)"
+
         try:
             driver.get(self.URL)
             driver.implicitly_wait(30)
             time.sleep(3)
-            driver.execute_script("window.scrollTo(0, window.scrollMaxY)")
+            driver.execute_script(scrollScript)
             time.sleep(3)
 
             elems = driver.find_elements(By.CSS_SELECTOR,".label [href]")
@@ -80,7 +89,7 @@ class QRGenerator:
             return data
         
         except Exception as error:
-            print("An error occurred:", error)
+            print("An error occurred: ", error)
             driver.quit()
 
 
@@ -151,10 +160,11 @@ class QRGenerator:
   
 if __name__ == "__main__":    
     try:
+        print("MAIN")
         generator = QRGenerator()
         generator.Set_Url("https://itch.io/jam/malagajam-weekend-17/entries")
         generator.Set_Logo_Path("G:\My Drive\Sincronizacion\Programacion\Python\QR_Generator_Itchio\MJW LOGO.png")
-        generator.Set_Webdriver("Firefox")
+        generator.Set_Webdriver("Chrome")
         generator.Set_Delete_QR_Folder(False)
         generator.Set_Save_Directory(os.getcwd())
         generator.Create_PDF()
