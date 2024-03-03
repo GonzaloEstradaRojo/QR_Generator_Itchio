@@ -58,8 +58,9 @@ class QRGenerator:
         os.chdir(self.SAVEDIRECTORY)
         if not os.path.exists("Games QR"):
             os.mkdir("Games QR") 
-            os.chdir(os.path.join(self.SAVEDIRECTORY,"Games QR"))
-            print(f'new directory: {os.path.join(self.SAVEDIRECTORY,"Games QR")}')
+        os.chdir(os.path.join(self.SAVEDIRECTORY,"Games QR"))
+        print(f'new directory: {os.path.join(self.SAVEDIRECTORY,"Games QR")}')
+        self.Set_Save_Directory(os.path.join(self.SAVEDIRECTORY,"Games QR"))
 
     def Get_Itchio_Data(self):
         # Start Firefox session
