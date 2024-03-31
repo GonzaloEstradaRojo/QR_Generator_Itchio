@@ -1,43 +1,41 @@
+import os
 from tkinter import messagebox, ttk
 import tkinter as tk
 from tkinter import filedialog
-import os
 from QR_Generator import QRGenerator
-
-SAVEDIRECTORY = os.getcwd()
-BROWSER = ""
+import threading
+import time
 
 def get_Browser_Selection():
+    global BROWSER
     BROWSER = dropdown.get()
 
-def openImageOfCenter():
+def selectLogoImage():
     filename = filedialog.askopenfilename(defaultextension=".png",  filetypes=[("PNG Images", "*.png"), ("JPEG Images", "*.jpeg"), ("All Files", "*.*")])
     if filename:
         ent_logo.delete(0,tk.END)
         ent_logo.insert(0,filename)
-    else:
-        print("No file selected.")
 
 def selectSaveDirectory():
+    global SAVEDIRECTORY
     SAVEDIRECTORY = filedialog.askdirectory()
-    print(SAVEDIRECTORY)
+    if(SAVEDIRECTORY != ""):
+        ent_SaveFolder.delete(0,tk.END)
+        ent_SaveFolder.insert(0,SAVEDIRECTORY)
 
-def move_button(widget, row, col):
+
+def move_element(widget, row, col):
     widget.place_forget() 
     widget.place(x=row, y=col) 
 
 def checkCheckboxImage():
     if (logoWanted.get() == 1):
-        show_button(btn_logo, 50, 175)
-        show_button(ent_logo, 150, 175)
-        move_button(btn_Save, 50, 210)
-        move_button(btn_Create, 250, 210)
+        show_button(btn_logo, 50, 200)
+        show_button(ent_logo, 150, 200)
     else:
         hide_button(btn_logo)
         hide_button(ent_logo)
         ent_logo.delete(0,tk.END)
-        move_button(btn_Save, 50, 175)
-        move_button(btn_Create, 250, 175)
 
 def createPDF():
     generator = QRGenerator()
@@ -47,76 +45,78 @@ def createPDF():
             title="Populate URL"
         )
         return
-    # generator.Set_Url("https://itch.io/jam/malagajam-weekend-17/entries")
     generator.Set_Url(ent_url.get())
 
     if(logoWanted.get() == 1):
         if(ent_logo.get() == ""):
             messagebox.showwarning(
-                message=f"Logo is missing.\nPlease, select an image before creating th PDF",
-                title="Populate URL"
+                message = f"Logo is missing.\nPlease, select an image before creating th PDF",
+                title = "Populate URL"
             )   
             return 
-        # generator.Set_Logo_Path("G:\My Drive\Sincronizacion\Programacion\Python\QR_Generator_Itchio\MJW LOGO.png")
-        generator.Set_Logo_Path("G:\My Drive\Sincronizacion\Programacion\Python\QR_Generator_Itchio\MJW LOGO.png")
+        generator.Set_Add_Logo(True, ent_logo.get() )
     
-    if(deleteQrs):
-        generator.Set_Delete_QR_Folder(True)
-    else:
-        generator.Set_Delete_QR_Folder(False)
+    generator.Set_Delete_QR_Folder(deleteQrs.get() == 1)
+
         
     generator.Set_Webdriver(BROWSER)
     generator.Set_Save_Directory(SAVEDIRECTORY)
     generator.Create_PDF()
 
 def hide_button(widget): 
-    # This will remove the widget from toplevel 
     widget.place_forget() 
 
 def show_button(widget, row, col): 
-    # This will recover the widget from toplevel 
     widget.place(x=row, y=col) 
-  
+
 window = tk.Tk()
 window.title("QR GENERATOR ITCHIO")
 window.config(width=500, height=300)
 
+SAVEDIRECTORY = os.getcwd()
+BROWSER = ""
 lbl_url = tk.Label(master=window, text="Insert URL")
-lbl_url.place(x=50, y = 50)
+lbl_url.place(x=50, y = 40)
 
+ent_url = tk.Entry(master=window, width=50)
+ent_url.place(x=150, y = 40)
 
 dropdown = ttk.Combobox(
     state="readonly",
     values=["Firefox", "Chrome", "Microsoft Edge"],
 )
 dropdown.current(0)
-dropdown.place(x=175, y=75)
+dropdown.place(x=150, y=75)
 BROWSER = dropdown.get()
 
 lbl_dropdown = tk.Label(master=window, text="Select browser")
 lbl_dropdown.place(x=50, y = 75)
 
-ent_url = tk.Entry(master=window, width=50)
-ent_url.place(x=120, y = 50)
-
-btn_logo = ttk.Button(text="Select logo", command=openImageOfCenter)
+btn_logo = ttk.Button(text="Select Logo", command = selectLogoImage)
 ent_logo = tk.Entry(master=window, width=50)
 
-button = ttk.Button(text="Get dropdown value", command=get_Browser_Selection)
-button.place(x=250, y=100)
+btn_SaveFolder = ttk.Button(text="Select Folder", command = selectSaveDirectory)
+btn_SaveFolder.place(x=50, y = 110)
 
-logoWanted = tk.IntVar()
-cb_Img = tk.Checkbutton(window, text='Añadir imagen central',variable = logoWanted, onvalue=1, offvalue=0, command=checkCheckboxImage)
-cb_Img.place(x=50, y=100)
+ent_SaveFolder = tk.Entry(master=window, width=50)
+ent_SaveFolder.place(x=150, y = 110)
 
 deleteQrs = tk.IntVar()
-cb_QRs = tk.Checkbutton(window, text='Eliminar imagenes de QR generadas',variable = deleteQrs, onvalue=1, offvalue=0)
-cb_QRs.place(x=50, y=130)
+cb_QRs = tk.Checkbutton(window, text='Delete QR images generated',variable = deleteQrs, onvalue=1, offvalue=0)
+cb_QRs.place(x=50, y=140)
 
-btn_Save = ttk.Button(text="Select Save Directory", command=selectSaveDirectory)
-btn_Save.place(x=50, y = 175)
+
+logoWanted = tk.IntVar()
+cb_Img = tk.Checkbutton(window, text='Add logo in the QR center',variable = logoWanted, onvalue=1, offvalue=0, command=checkCheckboxImage)
+cb_Img.place(x=50, y=170)
+
+
 
 btn_Create = ttk.Button(text="Create PDF", command=createPDF)
-btn_Create.place(x=250, y = 175)
+btn_Create.place(x=200, y = 250)
 
 window.mainloop()
+
+# Insertar multithreading 
+# Ajsutar UI
+# Pensar en cambiar a grid en vez de usar place

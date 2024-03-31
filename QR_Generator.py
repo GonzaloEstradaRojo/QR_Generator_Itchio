@@ -1,12 +1,12 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-import re
 import os
 import qrcode
-import time
+import re
 import shutil
+import time
 
-#creation of new pdf
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+
 from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle
 from reportlab.lib.units import inch
 import PIL.Image
@@ -63,7 +63,6 @@ class QRGenerator:
         self.Set_Save_Directory(os.path.join(self.SAVEDIRECTORY,"Games QR"))
 
     def Get_Itchio_Data(self):
-        # Start Firefox session
         match self.WEBDRIVER:
             case "Firefox":
                 driver = webdriver.Firefox()
@@ -92,7 +91,6 @@ class QRGenerator:
         except Exception as error:
             print("An error occurred: ", error)
             driver.quit()
-
 
     def Refactor_Game_Name(self, name):
         # Regex expression for ilegal windows character in files
