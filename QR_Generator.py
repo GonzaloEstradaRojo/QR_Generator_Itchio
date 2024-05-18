@@ -131,7 +131,7 @@ class QRGenerator:
         rows = []
         tabStyle = [('ALIGN',(0,0),(-1,-1),'CENTER')] 
         for index, game in enumerate(data):
-            print(index, game[0])
+            # print(index, game[0])
             image = Image(f"Qrs/{game[0]}.png",self.QRSIZE,self.QRSIZE)
             if index % 2 == 0:
                 rows.append([self.Truncate_Large_Names(game[0])])
