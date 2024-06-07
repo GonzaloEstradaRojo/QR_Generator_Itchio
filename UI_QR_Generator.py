@@ -4,7 +4,6 @@ import tkinter as tk
 from tkinter import filedialog
 from QR_Generator import QRGenerator
 import threading
-import time
 
 def get_Browser_Selection():
     global BROWSER
@@ -17,31 +16,19 @@ def selectLogoImage():
         ent_logo.insert(0,filename)
 
 def openProgressIndicatorWindow():
-    # Toplevel object which will 
-    # be treated as a new window
-    newWindow = tk.Toplevel()
- 
-    # sets the title of the
-    # Toplevel widget
-    newWindow.title("Creating PDF")
-    print("Abro")
 
-    # sets the geometry of toplevel
+    newWindow = tk.Toplevel() 
+    newWindow.title("Creating PDF")
     newWindow.geometry("400x125")
     info_label = ttk.Label(master=newWindow, text="The PDF is being created. \nPlease, wait a moment until the process is done.")
     info_label.place(x = 20, y = 20)
     progressbar = ttk.Progressbar(master=newWindow, mode="indeterminate")
     progressbar.place(x=20, y=70, width=350)
-
-    progressbar.start()
-
-
     progressbar.start()
     newWindow.focus()
     return newWindow
 
 def closeProgressIndicatorWindow(window):
-    print("Cierro")
     window.destroy()
  
 def selectSaveDirectory():
@@ -108,7 +95,6 @@ def check_if_done(t, progressWindow):
         )   
         enableButtons(True)
         emptyFields()
-
     else:
         # Otherwise check again after one second.
         schedule_check(t, progressWindow)
@@ -186,8 +172,6 @@ if __name__ == "__main__":
         logoWanted = tk.IntVar()
         cb_Img = tk.Checkbutton(window, text='Add logo in the QR center',variable = logoWanted, onvalue=1, offvalue=0, command=checkCheckboxImage)
         cb_Img.place(x=50, y=170)
-
-
 
         btn_Create = ttk.Button(text="Create PDF", command=createPDF)
         btn_Create.place(x=200, y = 250)
