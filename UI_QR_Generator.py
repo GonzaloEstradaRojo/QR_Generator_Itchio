@@ -16,7 +16,6 @@ def selectLogoImage():
         ent_logo.insert(0,filename)
 
 def openProgressIndicatorWindow():
-
     newWindow = tk.Toplevel() 
     newWindow.title("Creating PDF")
     newWindow.geometry("400x125")
@@ -135,6 +134,7 @@ if __name__ == "__main__":
         window = tk.Tk()
         window.title("QR GENERATOR ITCHIO")
         window.config(width=500, height=300)
+        window.resizable(False, False)
 
         SAVEDIRECTORY = os.getcwd()
         BROWSER = ""
