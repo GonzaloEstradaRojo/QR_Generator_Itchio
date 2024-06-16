@@ -23,6 +23,8 @@ class QRGenerator:
         self.DeleteQRFolder = False
         self.QRSIZE = 180
         self.FONTSIZE = 15
+        self.PROGRESS = 0
+        self.PROGRESS_MSG = "Initiating process"
 
     def Create_PDF(self):
         try:
@@ -32,6 +34,9 @@ class QRGenerator:
             self.Create_PDF_With_Table(qrs)
             if(self.DeleteQRFolder):
                 self.Delete_QR_Folders()
+            self.PROGRESS = 100
+            self.PROGRESS_MSG = "PDF with QRs created"
+            
         except Exception as error:
             print("An error occurred:", error) 
 
@@ -53,6 +58,12 @@ class QRGenerator:
 
     def Set_Save_Directory(self, saveDirectory):
         self.SAVEDIRECTORY = saveDirectory
+    
+    def Get_Progress_Number(self):
+        return self.PROGRESS
+    
+    def Get_Progress_Message(self):
+        return self.PROGRESS_MSG
 
     def Change_Working_Directory(self):
         os.chdir(self.SAVEDIRECTORY)
@@ -63,6 +74,8 @@ class QRGenerator:
         self.Set_Save_Directory(os.path.join(self.SAVEDIRECTORY,"Games QR"))
 
     def Get_Itchio_Data(self):
+        self.PROGRESS = 10
+        self.PROGRESS_MSG = f"Opening browser {self.WEBDRIVER}."
         match self.WEBDRIVER:
             case "Firefox":
                 driver = webdriver.Firefox()
@@ -80,12 +93,14 @@ class QRGenerator:
             time.sleep(3)
             driver.execute_script(scrollScript)
             time.sleep(3)
-
+            self.PROGRESS = 20
+            self.PROGRESS_MSG = "Downloading information of the games from website."
             elems = driver.find_elements(By.CSS_SELECTOR,".label [href]")
             data = [(elem.get_attribute('innerHTML'),elem.get_attribute('href')) for elem in elems]
 
             driver.quit()
             data.sort(key=lambda elem: elem[0])
+            self.PROGRESS = 30
             return data
         
         except Exception as error:
@@ -101,8 +116,13 @@ class QRGenerator:
         qrs = []
         if not os.path.exists("Qrs"):
             os.mkdir("Qrs") 
+        self.PROGRESS = 40
+        self.PROGRESS_MSG = "Creating Qrs images."
 
-        for i in range(len(data)):
+        list_len = len(data)
+        for i in range(list_len):
+            if( i % list_len == 0):
+                self.PROGRESS += 10
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -120,6 +140,9 @@ class QRGenerator:
             refactor_Name = self.Refactor_Game_Name(data[i][0])
             img.save(f'Qrs\{refactor_Name}.png')
             qrs.append((refactor_Name,img))
+        
+        self.PROGRESS = 80
+        self.PROGRESS_MSG = f"Creating PDF with {list_len} QRs."
         return qrs
 
     def Create_PDF_With_Table(self, data):
@@ -131,7 +154,6 @@ class QRGenerator:
         rows = []
         tabStyle = [('ALIGN',(0,0),(-1,-1),'CENTER')] 
         for index, game in enumerate(data):
-            # print(index, game[0])
             image = Image(f"Qrs/{game[0]}.png",self.QRSIZE,self.QRSIZE)
             if index % 2 == 0:
                 rows.append([self.Truncate_Large_Names(game[0])])
@@ -141,7 +163,10 @@ class QRGenerator:
             else:
                 rows[-2].append(self.Truncate_Large_Names(game[0]))
                 rows[-1].append(image)
-
+        
+        
+        self.PROGRESS = 90
+        time.sleep(3)
         table = Table(rows, colWidths=inch*4)
         table.setStyle(TableStyle(tabStyle))
         elems.append(table)

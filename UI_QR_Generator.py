@@ -19,13 +19,14 @@ def openProgressIndicatorWindow():
     newWindow = tk.Toplevel() 
     newWindow.title("Creating PDF")
     newWindow.geometry("400x125")
-    info_label = ttk.Label(master=newWindow, text="The PDF is being created. \nPlease, wait a moment until the process is done.")
+    info_label = ttk.Label(master=newWindow, text="Please, wait a moment until the process is done.")
     info_label.place(x = 20, y = 20)
-    progressbar = ttk.Progressbar(master=newWindow, mode="indeterminate")
-    progressbar.place(x=20, y=70, width=350)
-    progressbar.start()
+    msg_label = ttk.Label(master=newWindow)
+    msg_label.place(x = 20, y = 50)
+    progressbar = ttk.Progressbar(master=newWindow, mode='determinate')
+    progressbar.place(x=20, y=75, width=350)
     newWindow.focus()
-    return newWindow
+    return newWindow, progressbar, msg_label
 
 def closeProgressIndicatorWindow(window):
     window.destroy()
@@ -37,7 +38,6 @@ def selectSaveDirectory():
     if(SAVEDIRECTORY != ""):
         ent_SaveFolder.delete(0,tk.END)
         ent_SaveFolder.insert(0,SAVEDIRECTORY)
-
 
 def move_element(widget, row, col):
     widget.place_forget() 
@@ -75,18 +75,36 @@ def createPDF():
     generator.Set_Webdriver(BROWSER)
     generator.Set_Save_Directory(SAVEDIRECTORY)
     enableButtons(False) 
+    progressWindow, progressBar, msgLabel = openProgressIndicatorWindow()
+    main_thread = threading.Thread(target=generator.Create_PDF)
+    main_thread.start()    
+    schedule_check(main_thread, progressWindow, progressBar, msgLabel, generator)
 
-    progressWindow = openProgressIndicatorWindow()
-    t = threading.Thread(target=generator.Create_PDF)
-    t.start()
-    schedule_check(t, progressWindow)
 
-def schedule_check(t, progressWindow):
-    window.after(1000, check_if_done, t, progressWindow)
+prev_val = 0
+prev_msg = ""
 
-def check_if_done(t, progressWindow):
+def schedule_check(thread, progressWindow, progressBar, msgLabel, generator):
+    global prev_val, prev_msg
+
+    new_val = generator.Get_Progress_Number()
+    new_msg = generator.Get_Progress_Message()
+
+
+    if(prev_val != new_val ):
+        progressBar.step( new_val-prev_val)
+        prev_val = new_val
+
+    if(prev_msg != new_msg):
+        msgLabel.config(text = new_msg)
+        prev_msg = new_msg
+
+    window.after(1000, check_if_done, thread, progressWindow, progressBar, msgLabel, generator)
+    
+
+def check_if_done(thread, progressWindow, progressBar, msgLabel, generator):
     # If the thread has finished, re-enable the button and show a message.
-    if not t.is_alive():
+    if not thread.is_alive():
         progressWindow.destroy()
         messagebox.showinfo(
             message="Process finished. The PDF has been created in the selected folder",
@@ -96,31 +114,23 @@ def check_if_done(t, progressWindow):
         emptyFields()
     else:
         # Otherwise check again after one second.
-        schedule_check(t, progressWindow)
+        schedule_check(thread, progressWindow, progressBar, msgLabel, generator)
    
 def enableButtons(enable):
-    ent_logo["state"] = "normal" if enable else "disabled"
-    ent_SaveFolder["state"] = "normal" if enable else "disabled"
-    ent_url["state"] = "normal" if enable else "disabled"
-    
-    dropdown["state"] = "normal" if enable else "disabled"
-
-    btn_Create["state"] = "normal" if enable else "disabled"
-    btn_logo["state"] = "normal" if enable else "disabled"
-    btn_SaveFolder["state"] = "normal" if enable else "disabled"
-    
-    cb_Img["state"] = "normal" if enable else "disabled"
-    cb_QRs["state"] = "normal" if enable else "disabled"
-
+    fields = [ent_logo, ent_SaveFolder, ent_url,  dropdown,  btn_Create,  btn_logo, btn_SaveFolder, cb_Img,  cb_QRs]
+    for field in fields:
+        field["state"] = "normal" if enable else "disabled"
 
 def emptyFields():
+    global prev_val, prev_msg
     ent_SaveFolder.delete(0,tk.END)
     ent_url.delete(0,tk.END)
     ent_logo.delete(0,tk.END)
     deleteQrs.set(0)
     logoWanted.set(0)
     checkCheckboxImage()
-
+    prev_val = 0
+    prev_msg = ""
 
 def hide_button(widget): 
     widget.place_forget() 
