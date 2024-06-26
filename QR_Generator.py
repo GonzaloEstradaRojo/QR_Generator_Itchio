@@ -6,6 +6,7 @@ import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from urllib.parse import urlparse
 
 from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle
 from reportlab.lib.units import inch
@@ -39,6 +40,7 @@ class QRGenerator:
             
         except Exception as error:
             print("An error occurred:", error) 
+            raise error
 
     def Set_Url(self, newUrl):
         self.URL = newUrl
@@ -70,8 +72,14 @@ class QRGenerator:
         if not os.path.exists("Games QR"):
             os.mkdir("Games QR") 
         os.chdir(os.path.join(self.SAVEDIRECTORY,"Games QR"))
-        print(f'new directory: {os.path.join(self.SAVEDIRECTORY,"Games QR")}')
+        print(f'New directory: {os.path.join(self.SAVEDIRECTORY,"Games QR")}')
         self.Set_Save_Directory(os.path.join(self.SAVEDIRECTORY,"Games QR"))
+
+    def Get_Total_Entries(self, driver):
+        parsed_url = urlparse(self.URL)
+        parte_href = parsed_url.path
+        numEntries = driver.find_elements(By.CSS_SELECTOR,f'a[href="{parte_href}"] .stat_value')[0]        
+        return int(numEntries.text)
 
     def Get_Itchio_Data(self):
         self.PROGRESS = 10
@@ -89,23 +97,29 @@ class QRGenerator:
 
         try:
             driver.get(self.URL)
-            driver.implicitly_wait(30)
-            time.sleep(3)
+            # driver.implicitly_wait(30)
+            time.sleep(1)
             driver.execute_script(scrollScript)
-            time.sleep(3)
+            time.sleep(1)
             self.PROGRESS = 20
             self.PROGRESS_MSG = "Downloading information of the games from website."
             elems = driver.find_elements(By.CSS_SELECTOR,".label [href]")
             data = [(elem.get_attribute('innerHTML'),elem.get_attribute('href')) for elem in elems]
+            lengthData = len(data)
+            totalEntries = self.Get_Total_Entries(driver)
+            if(totalEntries != lengthData):
+                raise Exception(f"Games not retrieved correctly. Expected {totalEntries} games. Only {lengthData} obtained")
 
-            driver.quit()
             data.sort(key=lambda elem: elem[0])
             self.PROGRESS = 30
             return data
         
         except Exception as error:
             print("An error occurred: ", error)
+            raise error
+        finally:
             driver.quit()
+
 
     def Refactor_Game_Name(self, name):
         # Regex expression for ilegal windows character in files
@@ -184,7 +198,6 @@ class QRGenerator:
   
 if __name__ == "__main__":    
     try:
-        print("MAIN")
         generator = QRGenerator()
         generator.Set_Url("https://itch.io/jam/malagajam-weekend-17/entries")
         generator.Set_Logo_Path("G:\My Drive\Sincronizacion\Programacion\Python\QR_Generator_Itchio\MJW LOGO.png")
