@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
 from QR_Generator import QRGenerator
 
-class QRGeneratorApp(tk.Tk):
+class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("QR GENERATOR ITCHIO")    
@@ -194,6 +194,6 @@ class QRGeneratorApp(tk.Tk):
 
 if __name__ == "__main__":    
     try:
-        QRGeneratorApp()
+        App()
     except Exception as error:
         messagebox.showwarning(message = f"Something went wrong \n{error}", title = "Error")
