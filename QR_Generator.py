@@ -1,210 +1,187 @@
 import os
-import qrcode
 import re
 import shutil
 import time
-
+import qrcode
+from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from urllib.parse import urlparse
-
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.edge.options import Options as EdgeOptions
 from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle
 from reportlab.lib.units import inch
-import PIL.Image
+from PIL import Image as PILImage
+
 
 class QRGenerator:
-    def __init__(self) -> None:
+    def __init__(self):
         self.URL = None
         self.LOGOPATH = None
         self.WEBDRIVER = None
-        self.SAVEDIRECTORY = os.getcwd()        
+        self.SAVEDIRECTORY = os.getcwd()
 
-        self.PDFName = "Games Qrs"
+        self.PDFName = "Games_QRs"
         self.AddLogo = False
         self.DeleteQRFolder = False
         self.QRSIZE = 180
         self.FONTSIZE = 15
         self.PROGRESS = 0
-        self.PROGRESS_MSG = "Initiating process"
+        self.PROGRESS_MSG = "Iniciando proceso"
 
+    # ------------------------- CONFIGURACIONES -------------------------
+    def Set_Url(self, url): 
+        self.URL = url
+    def Set_Logo_Path(self, path): 
+        self.LOGOPATH = path
+    def Set_Webdriver(self, driver): 
+        self.WEBDRIVER = driver
+    def Set_Add_Logo(self, add_logo, path): 
+        self.AddLogo, self.LOGOPATH = add_logo, path
+    def Set_Delete_QR_Folder(self, delete): 
+        self.DeleteQRFolder = delete
+    def Set_Save_Directory(self, path): 
+        self.SAVEDIRECTORY = path
+    def Get_Progress_Number(self): 
+        return self.PROGRESS
+    def Get_Progress_Message(self): 
+        return self.PROGRESS_MSG
+
+    # ------------------------- FLUJO PRINCIPAL -------------------------
     def Create_PDF(self):
         try:
             self.Change_Working_Directory()
-            games_data = self.Get_Itchio_Data()
-            qrs = self.Create_QR_Images(games_data)
+            games = self.Get_Itchio_Data()
+            qrs = self.Create_QR_Images(games)
             self.Create_PDF_With_Table(qrs)
-            if(self.DeleteQRFolder):
+            if self.DeleteQRFolder:
                 self.Delete_QR_Folders()
-            self.PROGRESS = 100
-            self.PROGRESS_MSG = "PDF with QRs created"
-            
-        except Exception as error:
-            print("An error occurred:", error) 
-            raise error
+            self.PROGRESS, self.PROGRESS_MSG = 100, "PDF creado correctamente ✅"
+        except Exception as e:
+            print("❌ Error:", e)
+            raise e
 
-    def Set_Url(self, newUrl):
-        self.URL = newUrl
-
-    def Set_Logo_Path(self, newPath):
-        self.LOGOPATH = newPath
-
-    def Set_Webdriver(self, newdriver):
-        self.WEBDRIVER = newdriver
-
-    def Set_Add_Logo(self, addNewLogo, newPath):
-        self.AddLogo = addNewLogo
-        self.Set_Logo_Path(newPath)
-
-    def Set_Delete_QR_Folder(self, deleteFolder):
-        self.DeleteQRFolder = deleteFolder
-
-    def Set_Save_Directory(self, saveDirectory):
-        self.SAVEDIRECTORY = saveDirectory
-    
-    def Get_Progress_Number(self):
-        return self.PROGRESS
-    
-    def Get_Progress_Message(self):
-        return self.PROGRESS_MSG
-
+    # ------------------------- UTILIDADES -------------------------
     def Change_Working_Directory(self):
-        os.chdir(self.SAVEDIRECTORY)
-        if not os.path.exists("Games QR"):
-            os.mkdir("Games QR") 
-        os.chdir(os.path.join(self.SAVEDIRECTORY,"Games QR"))
-        print(f'New directory: {os.path.join(self.SAVEDIRECTORY,"Games QR")}')
-        self.Set_Save_Directory(os.path.join(self.SAVEDIRECTORY,"Games QR"))
+        folder = os.path.join(self.SAVEDIRECTORY, "Games_QR")
+        os.makedirs(folder, exist_ok=True)
+        os.chdir(folder)
+        self.SAVEDIRECTORY = folder
+        print(f"[INFO] Directorio de guardado: {folder}")
 
-    def Get_Total_Entries(self, driver):
-        parsed_url = urlparse(self.URL)
-        parte_href = parsed_url.path
-        numEntries = driver.find_elements(By.CSS_SELECTOR,f'a[href="{parte_href}"] .stat_value')[0]        
-        return int(numEntries.text)
-
-    def Get_Itchio_Data(self):
-        self.PROGRESS = 10
-        self.PROGRESS_MSG = f"Opening browser {self.WEBDRIVER}."
+    def _create_driver(self):
+        opts = None
         match self.WEBDRIVER:
             case "Firefox":
-                driver = webdriver.Firefox()
-                scrollScript = "window.scrollTo(0, window.scrollMaxY)"
+                opts = FirefoxOptions()
+                opts.add_argument("--headless")
+                return webdriver.Firefox(options=opts)
             case "Chrome":
-                driver = webdriver.Chrome()
-                scrollScript = "window.scrollTo(0, document.body.scrollHeight)"
+                opts = ChromeOptions()
+                opts.add_argument("--headless")
+                return webdriver.Chrome(options=opts)
             case "Microsoft Edge":
-                driver = webdriver.Edge()
-                scrollScript = "window.scrollTo(0, document.body.scrollHeight)"
+                opts = EdgeOptions()
+                opts.add_argument("--headless")
+                return webdriver.Edge(options=opts)
+            case _:
+                raise ValueError(f"Navegador no reconocido: {self.WEBDRIVER}")
 
+    def _sanitize_filename(self, name):
+        return re.sub(r'[<>:"/\\|?*\x00-\x1F]', ' ', name).replace("&amp;", "&")
+
+    # ------------------------- SCRAPING -------------------------
+    def Get_Itchio_Data(self):
+        self.PROGRESS, self.PROGRESS_MSG = 10, f"Abriendo navegador {self.WEBDRIVER}..."
+        driver = self._create_driver()
+
+        self.PROGRESS, self.PROGRESS_MSG = 15, f"Buscando juegos..."
         try:
             driver.get(self.URL)
-            # driver.implicitly_wait(30)
             time.sleep(1)
-            driver.execute_script(scrollScript)
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(1)
-            self.PROGRESS = 20
-            self.PROGRESS_MSG = "Downloading information of the games from website."
-            elems = driver.find_elements(By.CSS_SELECTOR,".label [href]")
-            data = [(elem.get_attribute('innerHTML'),elem.get_attribute('href')) for elem in elems]
-            lengthData = len(data)
-            totalEntries = self.Get_Total_Entries(driver)
-            if(totalEntries != lengthData):
-                raise Exception(f"Games not retrieved correctly. Expected {totalEntries} games. Only {lengthData} obtained")
-
-            data.sort(key=lambda elem: elem[0])
-            self.PROGRESS = 30
+            elems = driver.find_elements(By.CSS_SELECTOR, ".label [href]")
+            if not elems:
+                raise Exception("No se encontraron enlaces de juegos. Verifica la URL o el selector.")
+            data = [(e.get_attribute('innerHTML'), e.get_attribute('href')) for e in elems]
+            data.sort(key=lambda x: x[0])
+            self.PROGRESS, self.PROGRESS_MSG = 50, f"{len(data)} juegos encontrados."
             return data
-        
-        except Exception as error:
-            print("An error occurred: ", error)
-            raise error
         finally:
             driver.quit()
 
-
-    def Refactor_Game_Name(self, name):
-        # Regex expression for ilegal windows character in files
-        expression = r'[<>:"/\\|?*\x00-\x1F]'
-        return re.sub(expression, ' ', name).replace("&amp;","&")
-
+    # ------------------------- GENERACIÓN DE QRs -------------------------
     def Create_QR_Images(self, data):
-        qrs = []
-        if not os.path.exists("Qrs"):
-            os.mkdir("Qrs") 
-        self.PROGRESS = 40
-        self.PROGRESS_MSG = "Creating Qrs images."
+        qr_folder = os.path.join(self.SAVEDIRECTORY, "Qrs")
+        os.makedirs(qr_folder, exist_ok=True)
+        total = len(data)
 
-        list_len = len(data)
-        for i in range(list_len):
-            if( i % list_len == 0):
-                self.PROGRESS += 10
+        self.PROGRESS_MSG = "Generando imágenes QR..."
+        for i, (name, link) in enumerate(data, start=1):
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_H,
                 box_size=10,
                 border=2,
             )
-            qr.add_data(data[i][1])
+            qr.add_data(link)
             qr.make(fit=True)
-            img = qr.make_image(fill_color="black", back_color="white")
-            if(self.AddLogo):
-                logo = PIL.Image.open(self.LOGOPATH)
-                logo = logo.resize((100,100))
-                pos = ((img.size[0] - logo.size[0])//2,(img.size[1] - logo.size[1])//2)
-                img.paste(logo, pos)
-            refactor_Name = self.Refactor_Game_Name(data[i][0])
-            img.save(f'Qrs\{refactor_Name}.png')
-            qrs.append((refactor_Name,img))
-        
-        self.PROGRESS = 80
-        self.PROGRESS_MSG = f"Creating PDF with {list_len} QRs."
-        return qrs
+            img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
+            if self.AddLogo and self.LOGOPATH:
+                try:
+                    logo = PILImage.open(self.LOGOPATH)
+                    logo = logo.resize((80, 80))
+                    pos = ((img.size[0] - logo.size[0]) // 2, (img.size[1] - logo.size[1]) // 2)
+                    img.paste(logo, pos)
+                except Exception as e:
+                    print(f"[WARN] No se pudo insertar el logo: {e}")
+
+            filename = self._sanitize_filename(name)
+            img.save(os.path.join(qr_folder, f"{filename}.png"))
+
+            self.PROGRESS = int(50 + (i / total) * 40)
+            self.PROGRESS_MSG = f"QR {i}/{total} creado..."
+        self.PROGRESS, self.PROGRESS_MSG = 90, f"QR {total} creados..."
+        return data
+
+    # ------------------------- PDF -------------------------
     def Create_PDF_With_Table(self, data):
+        pdf_name = self._get_unique_pdf_name()
+        self.PROGRESS_MSG = "Generando PDF con códigos QR..."
+        doc = SimpleDocTemplate(pdf_name, rightMargin=5, leftMargin=5, topMargin=5, bottomMargin=5)
+        elems, rows = [], []
+        tabStyle = [('ALIGN', (0, 0), (-1, -1), 'CENTER')]
 
-        doc = SimpleDocTemplate(f"{self.PDFName}.pdf",
-                            rightMargin=1,leftMargin=1,
-                            topMargin=1,bottomMargin=1)
-        elems = []
-        rows = []
-        tabStyle = [('ALIGN',(0,0),(-1,-1),'CENTER')] 
-        for index, game in enumerate(data):
-            image = Image(f"Qrs/{game[0]}.png",self.QRSIZE,self.QRSIZE)
-            if index % 2 == 0:
-                rows.append([self.Truncate_Large_Names(game[0])])
+        for i, (name, _) in enumerate(data):
+            image = Image(os.path.join("Qrs", f"{self._sanitize_filename(name)}.png"), self.QRSIZE, self.QRSIZE)
+            if i % 2 == 0:
+                rows.append([self._truncate_name(name)])
                 rows.append([image])
-                tabStyle.append(('FONTSIZE',(0,index),(1,index),self.FONTSIZE))
-                tabStyle.append(('VALIGN',(0,index),(1,index),"BOTTOM"))
             else:
-                rows[-2].append(self.Truncate_Large_Names(game[0]))
+                rows[-2].append(self._truncate_name(name))
                 rows[-1].append(image)
-        
-        
-        self.PROGRESS = 90
-        time.sleep(3)
-        table = Table(rows, colWidths=inch*4)
+
+        table = Table(rows, colWidths=inch * 4)
         table.setStyle(TableStyle(tabStyle))
         elems.append(table)
+        self.PROGRESS, self.PROGRESS_MSG = 95, f"PDF generado: {pdf_name}"
         doc.build(elems)
 
-    def Truncate_Large_Names(self, name: str) -> str:
-        if(len(name) > 28):    
-            return name[:25]+"..."
+    def _truncate_name(self, name):
+        return name[:25] + "..." if len(name) > 28 else name
+
+    def _get_unique_pdf_name(self):
+        base = os.path.join(self.SAVEDIRECTORY, f"{self.PDFName}.pdf")
+        i, name = 1, base
+        while os.path.exists(name):
+            name = os.path.join(self.SAVEDIRECTORY, f"{self.PDFName}_{i}.pdf")
+            i += 1
         return name
 
+    # ------------------------- LIMPIEZA -------------------------
     def Delete_QR_Folders(self):
-        folderPath = os.path.join(self.SAVEDIRECTORY, "Qrs")
-        if os.path.isdir(folderPath):
-            shutil.rmtree(folderPath)
-  
-if __name__ == "__main__":    
-    try:
-        generator = QRGenerator()
-        generator.Set_Url("https://itch.io/jam/malagajam-weekend-17/entries")
-        generator.Set_Logo_Path("G:\My Drive\Sincronizacion\Programacion\Python\QR_Generator_Itchio\MJW LOGO.png")
-        generator.Set_Webdriver("Chrome")
-        generator.Set_Delete_QR_Folder(False)
-        generator.Set_Save_Directory(os.getcwd())
-        generator.Create_PDF()
-
-    except Exception as error:
-      print("An error occurred: ", error) 
+        path = os.path.join(self.SAVEDIRECTORY, "Qrs")
+        if os.path.isdir(path):
+            shutil.rmtree(path)
