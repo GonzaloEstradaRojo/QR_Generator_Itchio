@@ -1,4 +1,3 @@
----
 # 🧭 Guía de uso — QR Generator for Itch.io (.exe)
 
 Esta aplicación genera códigos QR en PDF con los enlaces de los juegos de una jam en [Itch.io](https://itch.io).  
@@ -20,9 +19,7 @@ No necesita tener Python instalado — basta con ejecutar el archivo **`.exe`**.
 
 Así se ve la ventana principal del programa:
 
-<p align="center">
-  <img src="docs/images/app_main_window.png" alt="Ventana principal de QR Generator for Itch.io" width="350">
-</p>
+![Ventana principal de QR Generator for Itch.io](docs/images/app_main_window.png)
 
 Cada elemento tiene una función:
 
@@ -42,14 +39,13 @@ Cada elemento tiene una función:
 Para que el programa funcione correctamente, **la URL debe ser la página de “entries” de una jam de Itch.io**.  
 Debe tener este formato exacto:
 
-```
-    https://itch.io/jam/nombre-jam/entries
-```
+``
+https://itch.io/jam/nombre-jam/entries
+``
 
-✅ Ejemplo correcto: https://itch.io/jam/malagajam-weekend-19/entries
+✅ Ejemplo correcto: <https://itch.io/jam/malagajam-weekend-19/entries>
 
-❌ Ejemplo incorrecto: https://itch.io/c/5264911/malagajam-weekend19
-
+❌ Ejemplo incorrecto: <https://itch.io/c/5264911/malagajam-weekend19>
 
 ---
 
@@ -93,6 +89,7 @@ Cuando todo esté listo:
 2. Pulsa **“Create PDF”**.  
 
 Aparecerá una ventana de progreso que mostrará los pasos:
+
 - 🔹 *“Abriendo navegador Chrome…”*  
 - 🔹 *“Descargando información de juegos…”*  
 - 🔹 *“Generando códigos QR…”*  
@@ -107,9 +104,10 @@ Al finalizar, verás el mensaje ✅ **“PDF successfully created!”**
 En la carpeta seleccionada se creará una estructura como esta:
 
 📁 Games_QR/
-├── 📁 Qrs/ → Imágenes QR individuales
-└── 📄 Games_QRs.pdf → PDF final con todos los QR
 
+├── 📁 Qrs/ → Imágenes QR individuales
+
+└── 📄 Games_QRs.pdf → PDF final con todos los QR
 
 > Si activaste la opción *“Delete QR images after PDF creation”*,  
 > la carpeta `Qrs/` se eliminará automáticamente después de crear el PDF.
