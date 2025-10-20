@@ -4,14 +4,25 @@ import shutil
 import time
 import qrcode
 from urllib.parse import urlparse
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.edge.options import Options as EdgeOptions
 from reportlab.platypus import SimpleDocTemplate, Image, Table, TableStyle
 from reportlab.lib.units import inch
 from PIL import Image as PILImage
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
+
+from selenium.webdriver.edge.options import Options as EdgeOptions
+from selenium.webdriver.edge.service import Service as EdgeService
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+
 
 
 class QRGenerator:
@@ -70,20 +81,34 @@ class QRGenerator:
         print(f"[INFO] Directorio de guardado: {folder}")
 
     def _create_driver(self):
-        opts = None
+
+        """Crea el driver automáticamente según el navegador seleccionado, sin necesidad de instalación manual."""
         match self.WEBDRIVER:
-            case "Firefox":
-                opts = FirefoxOptions()
-                opts.add_argument("--headless")
-                return webdriver.Firefox(options=opts)
             case "Chrome":
+                from selenium.webdriver.chrome.options import Options as ChromeOptions
                 opts = ChromeOptions()
                 opts.add_argument("--headless")
-                return webdriver.Chrome(options=opts)
+                opts.add_argument("--disable-gpu")
+                opts.add_argument("--no-sandbox")
+                opts.add_argument("--disable-dev-shm-usage")
+                driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=opts)
+                return driver
+
+            case "Firefox":
+                from selenium.webdriver.firefox.options import Options as FirefoxOptions
+                opts = FirefoxOptions()
+                opts.add_argument("--headless")
+                driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=opts)
+                return driver
+
             case "Microsoft Edge":
+                from selenium.webdriver.edge.options import Options as EdgeOptions
                 opts = EdgeOptions()
                 opts.add_argument("--headless")
-                return webdriver.Edge(options=opts)
+                opts.add_argument("--disable-gpu")
+                driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=opts)
+                return driver
+
             case _:
                 raise ValueError(f"Navegador no reconocido: {self.WEBDRIVER}")
 

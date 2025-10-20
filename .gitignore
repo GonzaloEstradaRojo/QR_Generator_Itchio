@@ -2,5 +2,19 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs
-/__pycache__/QR_Generator.cpython-310.pyc
+# Archivos de compilación
+build/
+dist/
+*.spec
+__pycache__/
+
+# Archivos temporales
+*.pyc
+*.log
+
+# Drivers descargados por webdriver-manager
+.wdm/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
