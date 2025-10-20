@@ -1,4 +1,4 @@
-# QR_Generator_Itchio# 🎯 QR Generator for Itch.io
+# QR Generator for Itch.io
 
 Aplicación de escritorio en Python (Tkinter + Selenium) que:
 
